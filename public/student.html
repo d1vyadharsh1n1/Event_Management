@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Events</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+      const socket = io("http://localhost:5000");
+
+      function vote(eventId, type) {
+        socket.emit("vote", { eventId, type });
+      }
+
+      socket.on("updateVotes", (eventVotes) => {
+        Object.keys(eventVotes).forEach((eventId) => {
+          document.getElementById(`interested-${eventId}`).textContent =
+            eventVotes[eventId].interested || 0;
+          document.getElementById(`not-interested-${eventId}`).textContent =
+            eventVotes[eventId].not_interested || 0;
+        });
+      });
+
+      async function fetchEvents() {
+        const response = await fetch("http://localhost:5000/events");
+        const events = await response.json();
+        const container = document.getElementById("events-container");
+
+        container.innerHTML = events
+          .map(
+            (event) => `
+                <div class="event">
+                    <h3>${event.name}</h3>
+                    <p>${event.description}</p>
+                    <p>Date: ${event.date}</p>
+                    <p>Expected Participants: ${event.expected_participants}</p>
+                    <p>Interested: <span id="interested-${event.id}">0</span></p>
+                    <p>Not Interested: <span id="not-interested-${event.id}">0</span></p>
+                    <button onclick="vote(${event.id}, 'interested')">Interested</button>
+                    <button onclick="vote(${event.id}, 'not_interested')">Not Interested</button>
+                </div>
+            `
+          )
+          .join("");
+      }
+
+      fetchEvents();
+      function logout() {
+        localStorage.removeItem("token"); // Remove token
+        window.location.href = "login.html"; // Redirect to login page
+      }
+    </script>
+  </head>
+  <nav>
+    <h2>Event Management</h2>
+    <button onclick="logout()">Logout</button>
+  </nav>
+  <body>
+    <h2>Available Events</h2>
+    <div id="events-container"></div>
+  </body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Organiser Dashboard</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        text-align: center;
+      }
+      nav {
+        background-color: #333;
+        color: white;
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      button.logout {
+        background-color: red;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .container {
+        margin-top: 20px;
+        padding: 20px;
+        background: white;
+        width: 50%;
+        margin: auto;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      input,
+      button {
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+      button {
+        background-color: #28a745;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+      }
+      button:hover {
+        background-color: #218838;
+      }
+      p.error {
+        color: red;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <h2>Event Management</h2>
+      <button class="logout" onclick="logout()">Logout</button>
+    </nav>
+
+    <div class="container">
+      <h1>Welcome, Organiser!</h1>
+
+      <form id="addEventForm">
+        <input type="text" id="eventName" placeholder="Event Name" required />
+        <input
+          type="text"
+          id="eventDescription"
+          placeholder="Event Description"
+          required
+        />
+        <input type="date" id="eventDate" required />
+        <input
+          type="number"
+          id="expectedParticipants"
+          placeholder="Expected Participants"
+          required
+        />
+        <button type="submit">Add Event</button>
+      </form>
+
+      <p id="error-message" class="error"></p>
+    </div>
+
+    <script>
+      document
+        .getElementById("addEventForm")
+        .addEventListener("submit", async (event) => {
+          event.preventDefault();
+
+          const eventName = document.getElementById("eventName").value;
+          const eventDescription =
+            document.getElementById("eventDescription").value;
+          const eventDate = document.getElementById("eventDate").value;
+          const expectedParticipants = document.getElementById(
+            "expectedParticipants"
+          ).value;
+
+          const eventData = {
+            name: eventName,
+            description: eventDescription,
+            date: eventDate,
+            expectedParticipants: expectedParticipants,
+          };
+
+          try {
+            const response = await fetch("/organiser/add-event", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(eventData),
+            });
+
+            const result = await response.json();
+
+            if (response.status === 409) {
+              // Show warning and ask for confirmation
+              const userConfirmed = confirm(
+                `${result.warning} \nDo you still want to create this event?`
+              );
+
+              if (userConfirmed) {
+                // Force event creation
+                const overrideResponse = await fetch("/organiser/add-event", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ ...eventData, forceCreate: true }),
+                });
+
+                const overrideResult = await overrideResponse.json();
+                alert(overrideResult.message);
+                if (overrideResponse.ok) window.location.reload();
+              }
+            } else if (response.ok) {
+              alert(result.message);
+              window.location.reload();
+            } else {
+              document.getElementById("error-message").innerText = result.error;
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            document.getElementById("error-message").innerText =
+              "An error occurred. Please try again.";
+          }
+        });
+
+      function logout() {
+        localStorage.removeItem("token"); // Remove token
+        window.location.href = "login.html"; // Redirect to login page
+      }
+    </script>
+  </body>
+</html>
