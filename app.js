@@ -137,17 +137,30 @@ app.post("/organiser/add-event", (req, res) => {
         conflict: true,
       });
     }
-
+    // Assign Hall Based on Expected Participants
+    let hall = "";
+    if (expectedParticipants >= 1000) {
+      hall = "Main Auditorium";
+    } else if (expectedParticipants >= 500) {
+      hall = "Mini Auditorium";
+    } else if (expectedParticipants > 120) {
+      hall = Math.random() < 0.5 ? "Seminar Hall 1" : "Seminar Hall 2";
+    } else {
+      let lectureHall = Math.floor(Math.random() * 3) + 1; // Randomly pick 1, 2, or 3
+      hall = `Lecture Hall ${lectureHall}`;
+    }
     // If no conflicts, proceed with event creation
     db.query(
-      "INSERT INTO events (name, description, date, expectedParticipants) VALUES (?, ?, ?, ?)",
-      [name, description, date, expectedParticipants],
+      "INSERT INTO events (name, description, date, expectedParticipants, hall) VALUES (?, ?, ?, ?, ?)",
+      [name, description, date, expectedParticipants, hall],
       (err, result) => {
         if (err) {
           console.error("Error inserting event:", err);
           return res.status(500).json({ error: "Failed to add event." });
         }
-        res.status(200).json({ message: "Event added successfully!" });
+        res.status(200).json({
+          message: "Event added successfully! Hall Assigned: ${hall}",
+        });
       }
     );
   });
@@ -200,6 +213,28 @@ app.post("/events/vote", (req, res) => {
   io.emit("updateVotes", eventVotes); // Broadcast to all connected clients
 
   res.json({ message: "Vote recorded successfully" });
+});
+
+app.put("/organiser/edit-event/:id", (req, res) => {
+  const { id } = req.params;
+  const { name, description, date, expectedParticipants } = req.body;
+
+  db.query(
+    "UPDATE events SET name=?, description=?, date=?, expectedParticipants=? WHERE id=?",
+    [name, description, date, expectedParticipants, id],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: "Error updating event" });
+      res.json({ message: "Event updated successfully!" });
+    }
+  );
+});
+app.delete("/organiser/delete-event/:id", (req, res) => {
+  const { id } = req.params;
+
+  db.query("DELETE FROM events WHERE id=?", [id], (err, result) => {
+    if (err) return res.status(500).json({ error: "Error deleting event" });
+    res.json({ message: "Event deleted successfully!" });
+  });
 });
 
 // Start Server

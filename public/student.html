@@ -5,6 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Student Events</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        text-align: center;
+      }
+      header {
+        background-color: #333;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+      }
+      .logout {
+        background-color: red;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        font-size: 12px;
+        border-radius: 5px;
+        position: absolute;
+        right: 20px;
+        top: 12px;
+      }
+      .logout:hover {
+        background-color: darkred;
+      }
+      h2 {
+        margin-top: 20px;
+        color: #333;
+      }
+      #events-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        padding: 20px;
+      }
+      .event {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        width: 300px;
+        text-align: left;
+      }
+      .event h3 {
+        margin-top: 0;
+        color: #007bff;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 5px;
+        cursor: pointer;
+        border-radius: 5px;
+        font-size: 10px;
+        margin-top: 5px;
+        width: 12.5%; /* 1/8 of the previous width */
+        min-width: 40px; /* Ensures buttons remain clickable */
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .not-interested {
+        background-color: #dc3545;
+      }
+      .not-interested:hover {
+        background-color: #b02a37;
+      }
+      .event-buttons {
+        display: flex;
+        gap: 5px;
+      }
+    </style>
     <script>
       const socket = io("http://localhost:5000");
 
@@ -32,12 +112,14 @@
                 <div class="event">
                     <h3>${event.name}</h3>
                     <p>${event.description}</p>
-                    <p>Date: ${event.date}</p>
-                    <p>Expected Participants: ${event.expected_participants}</p>
-                    <p>Interested: <span id="interested-${event.id}">0</span></p>
-                    <p>Not Interested: <span id="not-interested-${event.id}">0</span></p>
-                    <button onclick="vote(${event.id}, 'interested')">Interested</button>
-                    <button onclick="vote(${event.id}, 'not_interested')">Not Interested</button>
+                    <p><strong>Date:</strong> ${event.date}</p>
+                    <p><strong>Expected Participants:</strong> ${event.expected_participants}</p>
+                    <p><strong>Interested:</strong> <span id="interested-${event.id}">0</span></p>
+                    <p><strong>Not Interested:</strong> <span id="not-interested-${event.id}">0</span></p>
+                    <div class="event-buttons">
+                      <button onclick="vote(${event.id}, 'interested')">👍</button>
+                      <button class="not-interested" onclick="vote(${event.id}, 'not_interested')">👎</button>
+                    </div>
                 </div>
             `
           )
@@ -46,16 +128,17 @@
 
       fetchEvents();
       function logout() {
-        localStorage.removeItem("token"); // Remove token
-        window.location.href = "login.html"; // Redirect to login page
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
       }
     </script>
   </head>
-  <nav>
-    <h2>Event Management</h2>
-    <button onclick="logout()">Logout</button>
-  </nav>
   <body>
+    <header>
+      Event Management
+      <button class="logout" onclick="logout()">Logout</button>
+    </header>
+
     <h2>Available Events</h2>
     <div id="events-container"></div>
   </body>
